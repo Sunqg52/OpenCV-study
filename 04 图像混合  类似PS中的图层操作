@@ -1,0 +1,47 @@
+//图文件混合
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
+#include<iostream>
+
+using namespace cv;
+using namespace std;
+
+int main(void)
+{
+	double alpha, beta, input;
+
+	Mat src1, src2, dst;
+
+	//让用户输入alpha的值
+	cout << "简易线性混合（Linear Blender）" << endl;
+	cout << "-----------------------------------" << endl;
+	cout << "输入0到1的alpha的值：" << endl;
+	cin >> input;
+
+	//确认alpha的值在0-1之间、
+	if (input >= 0 && input <= 1)
+	{
+		alpha = input;
+	}
+
+	//读取两个大小与类型完全相同的图文件
+	src1 = imread("F:\\Openfile\\Open_file\\open1\\01.jpg");
+	src2 = imread("F:\\Openfile\\Open_file\\open1\\02.jpg");
+
+	if(!src1.data)
+	{
+		cout << "读取src1错误" << endl;
+	}
+	if (!src2.data)
+	{
+		cout << "读取src2错误" << endl;
+	}
+
+	namedWindow("linder b", 1);
+	beta = (1.0 - alpha);
+	addWeighted(src1, alpha, src2, beta, 0.0, dst);
+	imshow("Linear Blend", dst);
+
+	waitKey(0);
+	return 0;
+}
