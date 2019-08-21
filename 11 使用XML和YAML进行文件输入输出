@@ -1,0 +1,205 @@
+程序说明：
+  FileStorage(const string& soutce, int flages, const string& encoding = string()):类别构造
+  函数
+    source：要打开的文件名或要读入的字符串
+    如果为文件名，则文件后缀决定其格式， 文件后缀加上.gz就成为压缩文件
+    flags：指定操作标志
+    FileStorage::READ：读入文件
+    FileStorage::WRITE：要加入的文件
+    FileStorage::APPEND：要附加的文件
+    FileStorage::MENORY：由source读入数据或将数据写入缓冲区
+    如果指定FileStorage::WRITE+FileStorage::MENORY, scorce将决定输出的
+    文件格式
+    encoding：文件编码规则，目前不支持UTF-16 XML编码规则，只能使用8位编码
+    bool FileStorage::open(const string& filename, int flages, const string& 
+    encoding = string())：打开文件
+    filename：文件名或读入数据的文字字符串；如果为文件名， 则文件后缀必须
+    是.xml或yml
+    flags：操作模式
+    encoding：文件编码规则
+  template<type_Tp>FileStorage& operator<<(FileStorage& fs, const_TP& v
+  alus):将数据写入文件存储（file storage）
+  或者：template<typename_Tp>FileStorage& operator<<(FileStorage& fs, 		
+  const_TP& vec)
+    fs：已打开的文件存储用来写入数据
+    velue：写入文件存储的数据
+    vec：写入文件存储的向量值
+  template<type_Tp>void operator<<(const FileNode& n, _TP& v
+  alus):由文件存储读取数据
+  或者：template<type_Tp>void operator<<(const FileNode& n,vector< _TP>& v
+  ec)
+  或者：template<type_Tp>FileNodeIterator operator<<(const FileNodeIterator& 
+  it, _TP& vec)
+  或者：template<type_Tp>FileNodeIterator operator<<(const FileNodeIterator& 
+  it,vector< _TP>& vec)
+    n：要读取数据的节点（node）
+    value：从文件存储读入的数据
+    vec：从文件存储读入的向量值
+    it：读入数据的迭代器
+    
+    
+    //通过XML和YAML文件来访问OpenCV的数据结构的代码如下
+#include<opencv2/core/core.hpp>
+#include<iostream>
+#include<string>
+
+using namespace std;
+using namespace cv;
+
+//定义数据结构
+class MyData
+{
+public:
+	//数据成员
+	int A;
+	double X;
+	string id;
+
+
+	//成员函数
+	MyData() :A(0), X(0), id()
+	{}
+
+	//开放以避免隐性转换
+	explicit MyData(int) :A(97), X(CV_PI), id("mydata1234")
+	{}
+
+	//此类的输出
+	void write(FileStorage& fs) const
+	{
+		fs << "{" << "A" << A << "X" << X << "id" << id << "}";
+	}
+	
+	//此类的输入
+	void read(const FileNode& node)
+	{
+		A = (int)node["A"];
+		X = (double)node["X"];
+		id = (string)node["id"];
+	}
+};
+
+//实际出入与输出函数
+static void wirte(FileStorage& fs, const std::string&,const MyData& x)
+{
+	x.write(fs);
+}
+
+static void read(const FileNode& node, MyData& x, const MyData& default_value = MyData())
+{
+	if (node.empty())
+		x = default_value;
+	else
+		x.read(node);
+}
+
+//FileStorage输入功能
+static ostream& operator<<(ostream& out, const MyData& m)
+{
+	out << "{ id = " << m.id << ",";
+	out << "X = " << m.X << ",";
+	out << "A = " << m.A << ",";
+}
+
+int main(int ac, char** av)
+{
+	string filename = "C:\\outputfile.yml";
+	
+	//写入
+	{
+		cout << endl << "写入开始：" << endl;
+		Mat R = Mat_<uchar>::eye(3, 3),
+			T = Mat_<double>::zeros(3, 1);
+		MyData m(1);
+
+		FileStorage fs(filename, FileStorage::WRITE);
+
+		fs << "iterationNr" << 100;
+
+		//字符串开始
+		fs << "string" << "{";
+		fs << "C:\\LENA.jpg" << "Awesomeness"
+			<< "C\\baboon.jpg";
+		
+		//字符串结束
+		fs << "]";
+
+		//字符串匹配（mapping）
+		fs << "Mapping";
+		fs << "{" << "one" << 1;
+		fs << "tow" << 2 << "}";
+
+		//cv::Mat
+		fs << "R" << R;
+		fs << "T" << T;
+
+		//数据结构
+		fs << "MyData" << m;
+
+		//释放fs内存
+		fs.release();
+		cout << "写入完成" << endl;
+	}
+
+	//读取
+	{
+		cout << endl << "读取开始：" << endl;
+		FileStorage fs;
+		fs.open(filename, FileStorage::READ);
+
+		int itNr;
+		//fs["iterationNr"] >> itNr;
+		itNr = (int)fs["iterationNr"];
+		cout << itNr;
+		if (!fs.isOpened)
+		{
+			cerr << "failed to open" << filename << endl;
+			return 1;
+		}
+
+		//读取字符串并取得节点
+		FileNode n = fs["strings"];
+		if (n.type() != FileNode::SEQ)
+		{
+			cerr << "节点不循序！" << endl;
+			return 1;
+		}
+
+		//Go through the node
+		FileNodeIterator it = n.begin(), it_end = n.end();
+		for (; it != it_end; ++it)
+			cout << (string)*it << endl;
+
+		//Read mappings from a sequence
+		n = fs["Matting"];
+		cout << "Two " << (int)(n["Two"]) << ";";
+		cout << "One " << (int)(n["One"]) << endl << endl;
+
+		MyData m;
+		Mat R, T;
+
+		//Read cv::Mat
+		fs["R"] >> R;
+		fs["T"] >> T;
+		//读取自己的数据结构
+		fs["MyData"] >> m;
+
+		cout << endl
+			<< "R = " << R << endl;
+		cout << "T = " << T << endl << endl;
+		cout << "MyData = " << endl << m << endl << endl;
+
+		//对不存在的节点显示基本特性
+		cout << "尝试读取不存在的";
+		fs["NonExisting"] >> m;
+		cout << endl << "NonExisting = " << endl << m << endl;
+	}
+	
+	cout << endl
+		<< "请使用文字编辑器打开存储的文件" << filename
+		<< endl;
+
+	getchar();
+
+	return 0;
+}
