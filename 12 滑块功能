@@ -1,0 +1,62 @@
+程序说明：
+  CreateTracbar(const string& trackbarname, const string& winname, int* 
+  value, int coune, TrackbarCallback onChange=0, void* 
+  userdata=0)：建立窗口滑块回调（callback）功能
+    trackbarname：滑块名称
+    winname：滑块要呈现的窗口名称
+    value：滑块所在的位置
+    count：滑块允许的最大值，最小值为0
+    onChang：滑块值变动实际处理的函数，此函数第一个参数是滑块的位置
+    值，第二个参数是userdata
+    usingdata：要传入处理滑块函数的值
+
+  滑块的作用是许多设置通过此功能能调整，当我们认为达到条件时，滑杆的值就是将来我们要放到程序中的值，这种在某种环境下调整找到最佳值的过程，在视频处理中称为“学习”。
+
+//使用滑块调整混合值的权重
+#include<opencv2/highgui/highgui.hpp>
+#include<stdio.h>
+using namespace cv;
+
+/*声明全局变量*/
+const int alpha_slider_max = 100;
+int alpha_slider;
+double alpha;
+double beta;
+
+/*声明图像数组*/
+
+Mat src1;
+Mat src2;
+Mat dst;
+
+static void on_trackbar(int, void*)
+{
+	alpha = (double)alpha_slider / alpha_slider_max;
+	beta = (1.0 - alpha);
+	addWeighted(src1, alpha, src2, beta, 0.0, dst);
+	imshow("Linear Blend", dst);
+}
+
+int main(void)
+{
+	//读取同样大小与类型的两个图形文件
+	src1 = imread("F:\\Openfile\\Open_file\\open1\\01.jpg");
+	src2 = imread("F:\\Openfile\\Open_file\\open1\\02.jpg");
+	if (!src1.data) { printf("Error loading src1"); return -1; }
+	if (!src2.data) { printf("Error loading src1"); return -1; }
+
+	//起始值
+	alpha_slider = 0;
+
+	//建立窗口
+	namedWindow("Linear Blend", 1);
+	char TrackbarName[50];
+	sprintf(TrackbarName,"alpha %d", alpha_slider_max);
+	
+	//产生滑块回复函数
+	createTrackbar(TrackbarName, "Linear Blend", &alpha_slider, alpha_slider_max, on_trackbar);
+
+	//等待按键
+	waitKey(0);
+	return 0;
+}
