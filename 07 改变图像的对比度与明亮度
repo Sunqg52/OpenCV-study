@@ -1,0 +1,53 @@
+//改变图像的对比度与明亮度
+//改变图像的对比度与明亮度
+#include<opencv/cv.h>
+#include<opencv/highgui.h>
+#include<iostream>
+
+using namespace std;
+using namespace cv;
+
+int main()
+{
+	double alpha, bate;
+
+	Mat image = imread("F:\\Openfile\\Open_file\\open1\\01.jpg");
+	Mat new_image = image.clone();
+
+	
+	cout << "基本线性转换" << endl;
+	cout << "输入alpha值[1.0 - 3.0]:";
+	cin >> alpha;
+	cout << "输入bate的值：[0 - 100]:";
+	cin >> bate;
+
+	//转换公式 new_image（i,j） =  alpha*image(i,j) + bate
+
+	for (int y = 0; y < image.rows; y++)
+	{
+		for (int x = 0; x < image.cols; x++)
+		{
+			for (int c = 0; c < 3; c++)
+			{
+				//针对像素的每个通道做转换
+				new_image.at<Vec3b>(x, y)[c] =
+					saturate_cast<uchar>(alpha*(image.at<Vec3b>(x, y)[c] + bate));
+			}
+		}
+	}
+	namedWindow("Original Image",1);
+	namedWindow("New image",1);
+	
+	
+
+	imshow("Original Image", image);
+	imshow("New Image", new_image);
+
+	waitKey();
+	return 0;
+}
+
+
+程序说明：
+图像转换可以使用两种方式，点处理和区块处理，明亮和对比就属于点处理，最普遍的就是加乘处理。G(x) = aF(x)+b
+图像点的指定是使用：image.at<Vec3b>(x,y)[c]，x表示行，y表示列，c表示R、G、B(0,1,2)，R=0。
