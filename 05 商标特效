@@ -1,0 +1,46 @@
+//商标特效  控制图片的大小
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
+#include"opencv2/imgproc/imgproc.hpp"
+#include<iostream>
+#include<vector>
+
+using namespace cv;
+using namespace std;
+
+int main()
+{
+	//载入图文件
+	Mat image1, logo,dst;
+
+	image1 = imread("F:\\Openfile\\Open_file\\open1\\01.jpg");
+	logo = imread("F:\\Openfile\\Open_file\\open1\\02.jpg");
+
+	//imshow("img1", image1);
+	//imshow("logo", logo);
+	//编译器要求使用前要赋初值
+	Mat image = image1, opencvlogo;
+
+	//对原图进行缩小
+	resize(logo,opencvlogo,Size(80,60));
+
+	
+
+	//定义图的区域
+	Mat imageROI;
+
+	//指定商标在原图的位置  x y width height
+	imageROI = image(Rect(420,420,80,64));
+	/*imshow("image",imageROI);*/
+
+	//加入商标
+	   //图像大小不一致  不能融合  代码存在问题
+	addWeighted(imageROI, 1.0, opencvlogo, 0.3, 0., imageROI);  //G(x)=(1-a)F0(x)+aF1(x)  最终的图像 权重 图1 权重 图2
+	
+	//显示结果
+	namedWindow("width logo");
+	imshow("with logo", image);
+
+	waitKey();
+	return 0;
+}
