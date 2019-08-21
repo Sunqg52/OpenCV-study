@@ -1,0 +1,126 @@
+程序说明：
+  傅里叶变换 是指将图像拆解成正弦与余弦元素，也就是将图由空间性转换为频率性。
+    int getOptimalDFTSize(int vecsize)：由输入的向量大小取得最佳的DFT（离散
+    的傅里叶变换）大小
+      vecsize：输入的向量大小
+      copyMakeBorder(InputArray src, OutputArray dst, int top, int bottom, int 			
+      left, int right, int borderType, const Scalar& value = 		
+      Scalar())：在图像外围增加边框
+      src：原图像
+      dst：结果图像；大小是原图加上上下左右扩展的像素数
+      top：向上扩展的像素数
+      bottom：向下扩展的像素数
+      left：向左扩展的像素数
+      right：向右扩展的像素数
+      borderType：边框类型（详细类型可百度）
+      value：若边框类型是BORDER_CONSTANT，此参数代表边框值
+    dft(InputArray src, OutputArray dst, int flash = 0, int nonzeroRows=0)：执
+    行向前或反向的傅里叶变换值
+      src:输入图像
+      dst：结果图像
+      flage：转换标志，可以为下列组合
+      DFT_INVERSE：执行反向转换
+      DFT_SCALE：缩放结果
+      DFT_ROWS：对输入图像的每一列执行向前或反向的转换
+      DFT_COMPLEX_OUTPUT：执行向前转换
+      DFT_REAL_OUTPUT：执行一维或二维复数数组，反向转换
+    magnitude(InputArray src, OutputArray dst, double alpha = 1, double beta 
+    = 0, int norm_type = NORM_L2, int dtype = -1, InputArray mask 
+    = noArray())：数组值距或基准的正常化处理
+    或者：normalize(const SparseMat& src, SparseMat& dst, double alpha, 
+      int mormType)
+      stc：输入图像
+      dst：输出图像
+      alpha：基准正常化的基准值，或是范围正常化的较低范围边界值
+      beta：范围正常化的较高范围边界值，但不用基准正常化
+      norm_type：正常化类型
+      dtype：若为负值则输入与输出有相同的通道与深度
+      mask：可有可无的遮罩值
+      
+      
+      //离散的傅里叶变换
+/*
+傅里叶变换 是指将图像拆解成正弦与余弦元素，也就是将图由空间性转换为频率性。
+*/
+#include<opencv2/core/core.hpp>
+#include<opencv2/imgproc/imgproc.hpp>
+#include<opencv2/highgui/highgui.hpp>
+#include<iostream>
+
+using namespace cv;
+using namespace std;
+
+int main(int argc, char** argv)
+{
+	const char* filename = "F:\\Openfile\\Open_file\\open1\\01.jpg";
+	Mat I = imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
+
+	if (I.empty())
+		return -1;
+
+	Mat padded;
+
+	//扩张图像到理想的大小
+	int m = getOptimalDFTSize(I.rows);
+	int n = getOptimalDFTSize(I.cols);
+
+	//在图像的边框补0值
+	copyMakeBorder(I, padded, 0, m - I.rows, 0, n - I.cols, BORDER_CONSTANT, Scalar::all(0));
+	
+	Mat planes[] = { Mat_<float>(padded), Mat::zeros(padded.size(), CV_32F) };
+
+	Mat complexI;
+
+	//使用0增加到另一个扩增面
+	merge(planes, 2, complexI);
+
+	//将结果大小与原图吻合
+	dft(complexI, complexI);
+
+	//计算扩增值并更换成对数的刻度
+	split(complexI, planes);
+	magnitude(planes[0], planes[1], planes[0]);
+	Mat magI = planes[0];
+
+	//更换成对数的刻度
+	magI += Scalar::all(1);
+	log(magI, magI);
+
+	//如果有奇数的行或列就修剪光谱
+	magI = magI(Rect(0, 0, magI.cols & -2, magI.rows & -2));
+
+	//安排傅里叶变换的四项区，以便原点位在图的中间
+	int cx = magI.cols / 2;
+	int cy = magI.rows / 2;
+
+	//使每个区块都产生图块
+
+	//左上
+	Mat q0(magI, Rect(0, 0, cx, cy));
+	
+	//右上
+	Mat q1(magI, Rect(cx, 0, cx, cy));
+
+	//左下
+	Mat q2(magI, Rect(0, cy, cx, cy));
+
+	//右下
+	Mat q3(magI, Rect(cx, cy, cx, cy));
+
+	Mat tmp;
+
+	//四象限区块左上与右下对调
+	q1.copyTo(tmp);
+	q2.copyTo(q0);
+	tmp.copyTo(q3);
+
+	//以浮点值（0-1）转换图像到可见的图
+	normalize(magI, magI, 0, 1,CV_MINMAX);
+
+	imshow("input image", I);
+	imshow("spectrum magnitude", magI);
+
+	waitKey(0);
+
+	return 0;
+}
