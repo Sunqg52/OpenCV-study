@@ -1,0 +1,53 @@
+//计算两个图的颜色值并相加
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
+#include<opencv2/imgproc/imgproc.hpp>
+#include<iostream>
+
+using namespace cv;
+using namespace std;
+
+int main()
+{
+	Mat image1, image2, image3;
+
+	image1 = imread("F:\\Openfile\\Open_file\\open1\\01.jpg");
+	if (!image1.data)
+	{
+		cout << "image1读取失败" << endl;
+		return 0;
+	}
+	image2 = imread("F:\\Openfile\\Open_file\\open1\\02.jpg");
+	if (!image2.data)
+	{
+		cout << "image2读取失败" << endl;
+		return 0;
+	}
+	//调整图片大小
+	resize(image2, image3,image1.size());
+
+	namedWindow("image 1");
+	imshow("image 1",image1);
+
+	namedWindow("image 3");
+	imshow("image 3", image3);
+
+	//雨天特效
+	Mat result;
+
+	image3 = image3 * 0.3;
+	image1 = image1 * 0.9;
+	add(image3,image1,result);
+
+	namedWindow("result");
+	imshow("result",result);
+
+	waitKey();
+
+	return 0;
+}
+
+
+图像扫描的快慢与图像的颜色数有关。通常使用褪色来降低图文件的大小
+
+遮罩处理：应了解
