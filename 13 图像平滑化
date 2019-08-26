@@ -1,0 +1,127 @@
+//图像的平滑化（模糊化，降低图像的分辨率）
+#include<iostream>
+#include<vector>
+#include<opencv2/imgproc/imgproc.hpp>
+#include<opencv2/highgui/highgui.hpp>
+#include<opencv2/features2d/features2d.hpp>
+
+using namespace std;
+using namespace cv;
+
+//声明全局变量
+int DELAY_CAPTION = 1500;
+int DELAY_BLUR = 100;
+int MAX_KERNEL_LENGTH = 31;
+
+Mat src,dst;
+char window_name[] = "demo";
+
+//声明函数
+int display_caption(const char* caption);
+int display_dst(int delay);
+
+int main(void)
+{
+	namedWindow(window_name, WINDOW_AUTOSIZE);
+
+	src = imread("F:\\Openfile\\Open_file\\open1\\01.jpg", 1);
+	if (display_caption("Image") != 0)
+		return 0;
+
+	dst = src.clone();
+	if (display_dst(DELAY_CAPTION) != 0)
+		return 0;
+
+	//使用Homogeneous模糊法
+	if (display_caption("Homogeneous Blur") != 0)
+		return 0;
+
+	for (int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2)
+	{
+		blur(src, dst, Size(i, i), Point(-1, -1));
+		if (display_dst(DELAY_BLUR) != 0)
+			return 0;
+	}
+
+	//使用Gaussion模糊法
+	if (display_caption("Gaussian Blur") != 0)
+		return 0;
+	for (int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2)
+	{
+		GaussianBlur(src, dst, Size(i, i), 0, 0);
+		if (display_dst(DELAY_BLUR) != 0)
+			return 0;
+	}
+
+	//使用Median模糊法
+	if (display_caption("Median Blur") != 0)
+		return 0;
+	for (int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2)
+	{
+		medianBlur(src, dst, i);
+		if (display_dst(DELAY_BLUR) != 0)
+			return 0;
+	}
+
+	//使用Bilateral模糊法
+	if (display_caption("Bilateral Blur") != 0)
+		return 0;
+	for (int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2)
+	{
+		bilateralFilter(src, dst, i, i * 2, i / 2);
+		if (display_dst(DELAY_BLUR) != 0)
+			return 0;
+	}
+
+	//显示结束并等待按键
+	display_caption("End: Press a key!");
+	waitKey(0);
+	return 0;
+}
+
+//显示文字
+int display_caption(const char* caption)
+{
+	dst = Mat::zeros(src.size(), src.type());
+	putText(dst, caption, Point(src.cols / 4, src.rows / 2),
+		FONT_HERSHEY_COMPLEX, 1, Scalar(255, 255, 255));
+	imshow(window_name, dst);
+	int c = waitKey(DELAY_CAPTION);
+	if (c >= 0) { return -1; }
+	return 0;
+}
+
+//显示图像
+int display_dst(int delay)
+{
+	imshow(window_name, dst);
+	int c = waitKey(delay);
+	if (c >= 0) { return -1; }
+	return 0;
+}
+
+
+程序说明：
+blur(InputArray src, OutputArray dst, Size ksize, Point anchor=Point(-1, -1), int 
+borderType = BORDER_DEFAULT): 归一化方格过滤器来平滑图像
+    src：输入图像
+    dst：输出图像，图像大小和类型与输入图像相同
+    ksize：模糊化的核大小
+    anchor：锚点， 默认值是Point(-1, -1), 锚点就是核终点
+    borderType：像素外推法边缘的类型
+       
+medianBlur(InputArray src, OutputArray dst, int ksize)：使用平均滤波器模糊图像
+    src：输入图像
+    dst：输出图像
+    ksize：光圈线性大小，必须是大于一的奇数
+    
+bilateralFilter(InputArray src, OutputArray dst, int  d, double sigmaColor,
+ double sigmaSpace, int borderType=VORDER_DEFAULT)：左右对称滤波图像
+    src：输入图像
+    dst：输出图像，大小和类型与输入图像一致
+    d：每个像素临近地区的直径
+    sigmaColor：颜色空间（color space）内的滤波器标准差
+    sigmaSpace：坐标空间内的滤波器标准差
+    borderType：像素外推法边缘的类型
+
+
